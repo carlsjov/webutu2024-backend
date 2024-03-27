@@ -57,10 +57,25 @@ app.delete('/api/persons/:id', (req, res) => {
 app.post('/api/persons', (req, res) => {
   const randomId = Math.floor(Math.random()*1000)
   const person = req.body
-  person.id = randomId
-  console.log(person)
-  persons = persons.concat(person)
-  res.json(person)
+  if (person.number && person.name) {
+    person.id = randomId
+    console.log(person)
+    const checkName = persons.find(check => check.name === person.name)
+    const checkNumber = persons.find(check => check.number === person.number)
+    console.log(checkName, checkNumber)
+    if (checkName || checkNumber) {
+      return res.status(400).json({
+        error: 'name or number already in use'
+      })
+    } else {
+      persons = persons.concat(person)
+      res.json(person)
+    }
+  } else {
+    return res.status(400).json({
+      error: 'name or number missing'
+    })
+  }
 })
 
 const PORT = 3001
