@@ -77,26 +77,13 @@ app.post('/api/persons', (req, res, next) => {
     number: body.number,
   })
 
-  if ((person.name ==! '' || person.name ==! undefined)  && (person.number ==! '' || person.number ==! undefined) ) {
+  if ((person.name !== '' && person.name !== undefined) && (person.number !== '' && person.number !== undefined)) {
     person.save().then(savedPerson => {
       res.json(savedPerson)
     })
 } else {
   res.status(400).send({ error: 'no required parameters'})
 }
-  /*
-  if (body.number ==! undefined && body.name ==! undefined) {
-    const person = new Person({
-      name: body.name,
-      number: body.number,
-    })
-    console.log(person)
-    person.save().then(savedPerson => {
-      res.json(savedPerson)
-    }).catch(error => next(error))
-  } else {
-    res.status(400).end().catch(error => next(error))
-  }*/
 })
 
 
