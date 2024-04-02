@@ -4,6 +4,7 @@ var morgan = require('morgan')
 const app = express()
 const cors = require('cors')
 const Person = require('./models/person')
+const person = require('./models/person')
 
 app.use(cors())
 app.use(express.json())
@@ -39,7 +40,7 @@ app.use(express.static('dist'))
 app.get('/api/persons', (req, res) => {
   Person.find({}).then(people => {
     res.json(people)
-  })  
+  }).catch(error => next(error))  
 })
 
 app.get('/info', (req, res) => {
@@ -49,37 +50,73 @@ app.get('/info', (req, res) => {
     res.send(text)
 })
 
-app.get('/api/persons/:id', (req, res) => {
+app.get('/api/persons/:id', (req, res, next) => {
   Person.findById(req.params.id).then(person => {
-    res.json(person)
-  })
+    if (person) {
+      res.json(person)
+    } else {
+      res.status(404).end()
+    }
+  }).catch(error => next(error))
 })
 
-app.delete('/api/persons/:id', (req, res) => {
+app.delete('/api/persons/:id', (req, res, next) => {
   const id = req.params.id
+  console.log(id)
   Person.findByIdAndDelete(id).then(deleted => {
     console.log("success", deleted)
     res.status(204).end()
-  })
+  }).catch(error => next(error))
 })
 
-app.post('/api/persons', (req, res) => {
+app.post('/api/persons', (req, res, next) => {
   const body = req.body
-  if (body.number === undefined || body.name === undefined) {
-    return res.status(400).json({
-      error: 'name or number missing'
-    })
-  }
+  console.log(body)
   const person = new Person({
     name: body.name,
     number: body.number,
   })
 
-  console.log(person)
-  person.save().then(savedPerson => {
-    res.json(savedPerson)
-  })
+  if ((person.name ==! '' || person.name ==! undefined)  && (person.number ==! '' || person.number ==! undefined) ) {
+    person.save().then(savedPerson => {
+      res.json(savedPerson)
+    })
+} else {
+  res.status(400).send({ error: 'no required parameters'})
+}
+  /*
+  if (body.number ==! undefined && body.name ==! undefined) {
+    const person = new Person({
+      name: body.name,
+      number: body.number,
+    })
+    console.log(person)
+    person.save().then(savedPerson => {
+      res.json(savedPerson)
+    }).catch(error => next(error))
+  } else {
+    res.status(400).end().catch(error => next(error))
+  }*/
 })
+
+
+const errorHandler = (error, req, res, next) => {
+  console.error(error.message)
+  if (error.name === 'CastError') {
+    return res.status(400).send({ error: 'no id signed'})
+  }
+
+  next(error)
+}
+
+app.use(errorHandler)
+
+const unknownId = (error, req, res, next) => {
+  console.error(error.message)
+  res.status(404).send({ error: 'unknown request'})
+}
+
+app.use(unknownId)
 
 const PORT = process.env.PORT
 app.listen(PORT)
