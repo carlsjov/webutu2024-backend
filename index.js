@@ -3,14 +3,14 @@ const express = require('express')
 var morgan = require('morgan')
 const app = express()
 const cors = require('cors')
-const NOTE = require('./models/person')
+const Person = require('./models/person')
 
 app.use(cors())
 app.use(express.json())
 app.use(morgan('tiny'))
 app.use(express.static('dist'))
 
-let persons = [
+/*let persons = [
     {
       name: "Arto Hellas",
       number: "040-123456",
@@ -31,10 +31,15 @@ let persons = [
       number: "39-23-6423122",
       id: 4
     }
-  ]
+  ]*/
+
+//let persons = Person.find({}).then(p => JSON.stringify(p))
+//console.log(persons)
 
 app.get('/api/persons', (req, res) => {
-    res.json(persons)
+  Person.find({}).then(people => {
+    res.json(people)
+  })  
 })
 
 app.get('/info', (req, res) => {
@@ -45,44 +50,35 @@ app.get('/info', (req, res) => {
 })
 
 app.get('/api/persons/:id', (req, res) => {
-  const id = Number(req.params.id)
-  const person = persons.find(person => person.id === id)
-  if (person) {
+  Person.findById(req.params.id).then(person => {
     res.json(person)
-  } else {
-    res.status(404).end()
-  }
+  })
 })
 
 app.delete('/api/persons/:id', (req, res) => {
-  const id = Number(req.params.id)
-  persons = persons.filter(person => person.id !== id)
-
+  const id = req.params.id
+  Person.deleteOne({_id: id}).then(deleted => {
+    console.log("success", deleted)
+  })
   res.status(204).end()
 })
 
 app.post('/api/persons', (req, res) => {
-  const randomId = Math.floor(Math.random()*1000)
-  const person = req.body
-  if (person.number && person.name) {
-    person.id = randomId
-    console.log(person)
-    const checkName = persons.find(check => check.name === person.name)
-    const checkNumber = persons.find(check => check.number === person.number)
-    console.log(checkName, checkNumber)
-    if (checkName || checkNumber) {
-      return res.status(400).json({
-        error: 'name or number already in use'
-      })
-    } else {
-      persons = persons.concat(person)
-      res.json(person)
-    }
-  } else {
+  const body = req.body
+  if (body.number === undefined || body.name === undefined) {
     return res.status(400).json({
       error: 'name or number missing'
     })
   }
+  const person = new Person({
+    name: body.name,
+    number: body.number,
+  })
+
+  console.log(person)
+  person.save().then(savedPerson => {
+    res.json(savedPerson)
+  })
 })
 
 const PORT = process.env.PORT
