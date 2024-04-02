@@ -57,10 +57,10 @@ app.get('/api/persons/:id', (req, res) => {
 
 app.delete('/api/persons/:id', (req, res) => {
   const id = req.params.id
-  Person.deleteOne({_id: id}).then(deleted => {
+  Person.findByIdAndDelete(id).then(deleted => {
     console.log("success", deleted)
+    res.status(204).end()
   })
-  res.status(204).end()
 })
 
 app.post('/api/persons', (req, res) => {
